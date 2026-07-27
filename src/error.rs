@@ -1,8 +1,8 @@
 #[cfg(feature = "fast_image_resize")]
 use fast_image_resize::{ImageBufferError, ResizeError};
 #[cfg(feature = "hf-hub")]
-use hf_hub::api::tokio::ApiError;
 use std::path::PathBuf;
+use hf_hub::HFError;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
@@ -41,8 +41,8 @@ pub enum ClipError {
 }
 
 #[cfg(feature = "hf-hub")]
-impl From<ApiError> for ClipError {
-    fn from(value: ApiError) -> Self {
+impl From<HFError> for ClipError {
+    fn from(value: HFError) -> Self {
         Self::HfHub(value.to_string())
     }
 }
