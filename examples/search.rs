@@ -1,14 +1,14 @@
 use color_eyre::eyre::Result;
 use open_clip_inference::Clip;
 use ort::ep::CUDA;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::time::Instant;
 use tracing_subscriber::EnvFilter;
 
 #[tokio::main]
 async fn main() -> Result<()> {
     tracing_subscriber::fmt()
-        .with_env_filter(EnvFilter::new("info,ort=warn"))
+        .with_env_filter(EnvFilter::new("info,ort=warn,xet_client=warn,xet_data=warn,xet_runtime=warn,xet=warn"))
         .init();
     color_eyre::install()?;
 
@@ -17,6 +17,7 @@ async fn main() -> Result<()> {
     let start = Instant::now();
 
     let embedder = Clip::from_hf("RuteNL/MobileCLIP2-S3-OpenCLIP-ONNX")
+        .cache_dir(Path::new("RUURD_CACHE"))
         .with_execution_providers(&[CUDA::default().build()])
         .build()
         .await?;

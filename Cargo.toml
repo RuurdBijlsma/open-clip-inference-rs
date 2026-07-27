@@ -1,6 +1,6 @@
 [package]
 name = "open_clip_inference"
-version = "0.4.0"
+version = "0.4.1"
 edition = "2024"
 description = "Run OpenCLIP compatible embedding models via ONNX Runtime"
 repository = "https://github.com/RuurdBijlsma/open-clip-rs"
@@ -22,11 +22,12 @@ serde_json = "1.0.151"
 bon = "3.9.3"
 hf-hub = { version = "1.0.0", optional = true }
 fast_image_resize = { version = "6.1.0", optional = true }
+tracing = {version = "0.1.44", optional = true }
 
 [features]
 default = ["download-binaries", "copy-dylibs", "hf-hub", "fast_image_resize"]
 # crate features
-hf-hub = ["dep:hf-hub"] # -> Enable downloading models from HuggingFace, relies on `tokio`
+hf-hub = ["dep:hf-hub", "dep:tracing"] # -> Enable downloading models from HuggingFace, relies on `tokio`
 fast_image_resize = ["dep:fast_image_resize"] # -> Use `fast_image_resize` crate for vision preprocessing (resize)
 # ort link features
 download-binaries = ["ort/download-binaries"]
@@ -57,8 +58,8 @@ azure = ["ort/azure"]
 color-eyre = "0.6.5"
 criterion = { version = "0.8.2", features = ["html_reports"] }
 tokio = "1.53.1"
-tracing-subscriber = { version = "0.3.23", features = ["env-filter", "fmt"] }
 tracing = "0.1.44"
+tracing-subscriber = { version = "0.3.23", features = ["env-filter", "fmt"] }
 
 [[bench]]
 name = "model_bench"

@@ -208,6 +208,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 ## Troubleshooting
 
+### Tracing
+
+If using the `hf-hub` feature, some of the dependencies of that crate can spam `tracing` logs quite a bit. I turn them off like so:
+```rust
+tracing_subscriber::fmt()
+    .with_env_filter(EnvFilter::new("info,ort=warn,xet_client=warn,xet_data=warn,xet_runtime=warn,xet=warn"))
+    .init();
+```
+
 ### If it doesn't build on Windows due to onnxruntime problems
 
 Try using the feature `load-dynamic` and point to the onnxruntime dll as described below.

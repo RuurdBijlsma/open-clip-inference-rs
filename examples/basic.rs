@@ -5,7 +5,6 @@ use std::path::Path;
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let model_id = "RuteNL/MobileCLIP2-S3-OpenCLIP-ONNX";
     let clip = Clip::from_hf(model_id)
-        .cache_dir(Path::new("HF_CACH_RUURD"))
         .build()
         .await?;
 

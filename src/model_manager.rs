@@ -20,7 +20,6 @@ pub const MODEL_FILES: &[&str] = &[
 /// Ensures that the model files are present locally.
 #[cfg(feature = "hf-hub")]
 pub async fn get_hf_model(model_id: &str, cache_dir: Option<&Path>) -> Result<PathBuf, ClipError> {
-    // Try Hugging Face Hub
     let client = match cache_dir {
         Some(dir) => HFClient::builder().cache_dir(dir).build()?,
         None => HFClient::new()?,
@@ -30,8 +29,10 @@ pub async fn get_hf_model(model_id: &str, cache_dir: Option<&Path>) -> Result<Pa
     let repo = client.model(owner, name);
 
     let mut model_dir = None;
-    for file in MODEL_FILES {
+    for &file in MODEL_FILES {
+        tracing::info!("Downloading {file}...");
         let downloaded_file = repo.download_file().filename(file).send().await?;
+
         if model_dir.is_none() {
             model_dir = downloaded_file.parent().map(ToOwned::to_owned);
         }
