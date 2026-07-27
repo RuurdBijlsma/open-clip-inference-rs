@@ -1,6 +1,6 @@
 use crate::error::ClipError;
 #[cfg(feature = "hf-hub")]
-use hf_hub::api::tokio::Api;
+use hf_hub::{HFClient, split_id};
 use std::env;
 use std::path::{Path, PathBuf};
 
@@ -19,14 +19,20 @@ pub const MODEL_FILES: &[&str] = &[
 
 /// Ensures that the model files are present locally.
 #[cfg(feature = "hf-hub")]
-pub async fn get_hf_model(model_id: &str) -> Result<PathBuf, ClipError> {
-    // Try Hugging Face Hub
-    let api = Api::new()?;
-    let repo = api.model(model_id.to_string());
+pub async fn get_hf_model(model_id: &str, cache_dir: Option<&Path>) -> Result<PathBuf, ClipError> {
+    let client = match cache_dir {
+        Some(dir) => HFClient::builder().cache_dir(dir).build()?,
+        None => HFClient::new()?,
+    };
+
+    let (owner, name) = split_id(model_id);
+    let repo = client.model(owner, name);
 
     let mut model_dir = None;
-    for file in MODEL_FILES {
-        let downloaded_file = repo.get(file).await?;
+    for &file in MODEL_FILES {
+        tracing::info!("Fetching {file}...");
+        let downloaded_file = repo.download_file().filename(file).send().await?;
+
         if model_dir.is_none() {
             model_dir = downloaded_file.parent().map(ToOwned::to_owned);
         }

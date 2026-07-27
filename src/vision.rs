@@ -33,9 +33,10 @@ impl VisionEmbedder {
     #[cfg(feature = "hf-hub")]
     pub async fn from_hf(
         #[builder(start_fn)] model_id: &str,
+        cache_dir: Option<&Path>,
         with_execution_providers: Option<&[ExecutionProviderDispatch]>,
     ) -> Result<Self, ClipError> {
-        let model_dir = model_manager::get_hf_model(model_id).await?;
+        let model_dir = model_manager::get_hf_model(model_id, cache_dir).await?;
         Self::from_local_dir(&model_dir)
             .maybe_with_execution_providers(with_execution_providers)
             .build()
