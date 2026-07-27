@@ -1,6 +1,6 @@
 use crate::error::ClipError;
 #[cfg(feature = "hf-hub")]
-use hf_hub::{split_id, HFClient};
+use hf_hub::{HFClient, split_id};
 use std::env;
 use std::path::{Path, PathBuf};
 
@@ -30,7 +30,7 @@ pub async fn get_hf_model(model_id: &str, cache_dir: Option<&Path>) -> Result<Pa
 
     let mut model_dir = None;
     for &file in MODEL_FILES {
-        tracing::info!("Downloading {file}...");
+        tracing::info!("Fetching {file}...");
         let downloaded_file = repo.download_file().filename(file).send().await?;
 
         if model_dir.is_none() {

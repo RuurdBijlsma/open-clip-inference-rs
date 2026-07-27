@@ -8,7 +8,9 @@ use tracing_subscriber::EnvFilter;
 #[tokio::main]
 async fn main() -> Result<()> {
     tracing_subscriber::fmt()
-        .with_env_filter(EnvFilter::new("info,ort=warn,xet_client=warn,xet_data=warn,xet_runtime=warn,xet=warn"))
+        .with_env_filter(EnvFilter::new(
+            "info,ort=warn,xet_client=warn,xet_data=warn,xet_runtime=warn,xet=warn",
+        ))
         .init();
     color_eyre::install()?;
 

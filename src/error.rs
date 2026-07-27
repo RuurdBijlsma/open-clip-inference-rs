@@ -1,8 +1,8 @@
 #[cfg(feature = "fast_image_resize")]
 use fast_image_resize::{ImageBufferError, ResizeError};
 #[cfg(feature = "hf-hub")]
-use std::path::PathBuf;
 use hf_hub::HFError;
+use std::path::PathBuf;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
