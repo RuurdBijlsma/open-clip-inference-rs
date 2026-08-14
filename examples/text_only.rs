@@ -1,6 +1,6 @@
 use color_eyre::Result;
 use open_clip_inference::TextEmbedder;
-use ort::ep::{CUDA};
+use ort::ep::CUDA;
 use std::time::Instant;
 
 #[tokio::main]
@@ -8,9 +8,7 @@ async fn main() -> Result<()> {
     color_eyre::install()?;
     let model_id = "RuteNL/MobileCLIP2-S3-OpenCLIP-ONNX";
     let embedder = TextEmbedder::from_hf(model_id)
-        .with_execution_providers(&[
-            CUDA::default().build(),
-        ])
+        .with_execution_providers(&[CUDA::default().build()])
         .build()
         .await?;
 
