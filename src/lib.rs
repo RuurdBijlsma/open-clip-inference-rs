@@ -175,6 +175,8 @@ pub mod onnx;
 pub mod text;
 pub mod vision;
 
+pub use ort::session::builder::GraphOptimizationLevel;
+
 pub use clip::Clip;
 pub use error::ClipError;
 pub use text::TextEmbedder;
