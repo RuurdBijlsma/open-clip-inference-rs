@@ -7,6 +7,7 @@ use crate::vision::VisionEmbedder;
 use bon::bon;
 use image::DynamicImage;
 use ort::ep::ExecutionProviderDispatch;
+use ort::session::builder::GraphOptimizationLevel;
 use std::path::{Path, PathBuf};
 
 /// A convenience wrapper that holds both a `VisionEmbedder` and a `TextEmbedder`.
@@ -26,10 +27,18 @@ impl Clip {
         #[builder(start_fn)] model_id: &str,
         cache_dir: Option<&Path>,
         with_execution_providers: Option<&[ExecutionProviderDispatch]>,
+        with_intra_threads: Option<usize>,
+        with_inter_threads: Option<usize>,
+        with_memory_pattern: Option<bool>,
+        with_optimization_level: Option<GraphOptimizationLevel>,
     ) -> Result<Self, ClipError> {
         let model_dir = model_manager::get_hf_model(model_id, cache_dir).await?;
         Self::from_local_dir(&model_dir)
             .maybe_with_execution_providers(with_execution_providers)
+            .maybe_with_intra_threads(with_intra_threads)
+            .maybe_with_inter_threads(with_inter_threads)
+            .maybe_with_memory_pattern(with_memory_pattern)
+            .maybe_with_optimization_level(with_optimization_level)
             .build()
     }
 
@@ -39,10 +48,18 @@ impl Clip {
         #[builder(start_fn)] model_id: &str,
         base_folder: Option<&Path>,
         with_execution_providers: Option<&[ExecutionProviderDispatch]>,
+        with_intra_threads: Option<usize>,
+        with_inter_threads: Option<usize>,
+        with_memory_pattern: Option<bool>,
+        with_optimization_level: Option<GraphOptimizationLevel>,
     ) -> Result<Self, ClipError> {
         let base_folder = base_folder.map_or_else(get_default_base_folder, ToOwned::to_owned);
         Self::from_local_dir(&base_folder.join(model_id))
             .maybe_with_execution_providers(with_execution_providers)
+            .maybe_with_intra_threads(with_intra_threads)
+            .maybe_with_inter_threads(with_inter_threads)
+            .maybe_with_memory_pattern(with_memory_pattern)
+            .maybe_with_optimization_level(with_optimization_level)
             .build()
     }
 
@@ -51,13 +68,25 @@ impl Clip {
     pub fn from_local_dir(
         #[builder(start_fn)] model_dir: &Path,
         with_execution_providers: Option<&[ExecutionProviderDispatch]>,
+        with_intra_threads: Option<usize>,
+        with_inter_threads: Option<usize>,
+        with_memory_pattern: Option<bool>,
+        with_optimization_level: Option<GraphOptimizationLevel>,
     ) -> Result<Self, ClipError> {
         model_manager::verify_model_dir(model_dir)?;
         let vision = VisionEmbedder::from_local_dir(model_dir)
             .maybe_with_execution_providers(with_execution_providers)
+            .maybe_with_intra_threads(with_intra_threads)
+            .maybe_with_inter_threads(with_inter_threads)
+            .maybe_with_memory_pattern(with_memory_pattern)
+            .maybe_with_optimization_level(with_optimization_level)
             .build()?;
         let text = TextEmbedder::from_local_dir(model_dir)
             .maybe_with_execution_providers(with_execution_providers)
+            .maybe_with_intra_threads(with_intra_threads)
+            .maybe_with_inter_threads(with_inter_threads)
+            .maybe_with_memory_pattern(with_memory_pattern)
+            .maybe_with_optimization_level(with_optimization_level)
             .build()?;
         Ok(Self {
             vision,
@@ -70,6 +99,10 @@ impl Clip {
     pub fn duplicate(&self) -> Result<Self, ClipError> {
         Self::from_local_dir(&self.model_dir)
             .with_execution_providers(&self.vision.session.execution_providers)
+            .maybe_with_intra_threads(self.vision.session.intra_threads)
+            .maybe_with_inter_threads(self.vision.session.inter_threads)
+            .maybe_with_memory_pattern(self.vision.session.memory_pattern)
+            .maybe_with_optimization_level(self.vision.session.optimization_level)
             .build()
     }
 

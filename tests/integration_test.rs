@@ -10,6 +10,7 @@ mod tests {
     #[tokio::test]
     async fn test_hf() -> Result<()> {
         let embedder = Clip::from_hf("RuteNL/MobileCLIP2-S2-OpenCLIP-ONNX")
+            .with_intra_threads(2)
             .build()
             .await?;
 

@@ -6,6 +6,7 @@ use crate::onnx::OnnxSession;
 use bon::bon;
 use ndarray::Array2;
 use ort::ep::ExecutionProviderDispatch;
+use ort::session::builder::GraphOptimizationLevel;
 use ort::value::Value;
 use std::path::{Path, PathBuf};
 use tokenizers::{PaddingParams, PaddingStrategy, Tokenizer, TruncationParams};
@@ -30,10 +31,18 @@ impl TextEmbedder {
         #[builder(start_fn)] model_id: &str,
         cache_dir: Option<&Path>,
         with_execution_providers: Option<&[ExecutionProviderDispatch]>,
+        with_intra_threads: Option<usize>,
+        with_inter_threads: Option<usize>,
+        with_memory_pattern: Option<bool>,
+        with_optimization_level: Option<GraphOptimizationLevel>,
     ) -> Result<Self, ClipError> {
         let model_dir = model_manager::get_hf_model(model_id, cache_dir).await?;
         Self::from_local_dir(&model_dir)
             .maybe_with_execution_providers(with_execution_providers)
+            .maybe_with_intra_threads(with_intra_threads)
+            .maybe_with_inter_threads(with_inter_threads)
+            .maybe_with_memory_pattern(with_memory_pattern)
+            .maybe_with_optimization_level(with_optimization_level)
             .build()
     }
 
@@ -43,10 +52,18 @@ impl TextEmbedder {
         #[builder(start_fn)] model_id: &str,
         base_folder: Option<&Path>,
         with_execution_providers: Option<&[ExecutionProviderDispatch]>,
+        with_intra_threads: Option<usize>,
+        with_inter_threads: Option<usize>,
+        with_memory_pattern: Option<bool>,
+        with_optimization_level: Option<GraphOptimizationLevel>,
     ) -> Result<Self, ClipError> {
         let base_folder = base_folder.map_or_else(get_default_base_folder, ToOwned::to_owned);
         Self::from_local_dir(&base_folder.join(model_id))
             .maybe_with_execution_providers(with_execution_providers)
+            .maybe_with_intra_threads(with_intra_threads)
+            .maybe_with_inter_threads(with_inter_threads)
+            .maybe_with_memory_pattern(with_memory_pattern)
+            .maybe_with_optimization_level(with_optimization_level)
             .build()
     }
 
@@ -55,6 +72,10 @@ impl TextEmbedder {
     pub fn from_local_dir(
         #[builder(start_fn)] model_dir: &Path,
         with_execution_providers: Option<&[ExecutionProviderDispatch]>,
+        with_intra_threads: Option<usize>,
+        with_inter_threads: Option<usize>,
+        with_memory_pattern: Option<bool>,
+        with_optimization_level: Option<GraphOptimizationLevel>,
     ) -> Result<Self, ClipError> {
         model_manager::verify_model_dir(model_dir)?;
         let model_path = model_dir.join("text.onnx");
@@ -64,7 +85,14 @@ impl TextEmbedder {
         let execution_providers = with_execution_providers.unwrap_or_default();
 
         let model_config = ModelConfig::from_file(model_config_path)?;
-        let session = OnnxSession::new(model_path, execution_providers)?;
+        let session = OnnxSession::new(
+            model_path,
+            execution_providers,
+            with_optimization_level,
+            with_intra_threads,
+            with_inter_threads,
+            with_memory_pattern,
+        )?;
         let config = OpenClipConfig::from_file(config_path)?;
         let mut tokenizer = Tokenizer::from_file(tokenizer_path)?;
 
@@ -105,6 +133,10 @@ impl TextEmbedder {
     pub fn duplicate(&self) -> Result<Self, ClipError> {
         Self::from_local_dir(&self.model_dir)
             .with_execution_providers(&self.session.execution_providers)
+            .maybe_with_intra_threads(self.session.intra_threads)
+            .maybe_with_inter_threads(self.session.inter_threads)
+            .maybe_with_memory_pattern(self.session.memory_pattern)
+            .maybe_with_optimization_level(self.session.optimization_level)
             .build()
     }
 
