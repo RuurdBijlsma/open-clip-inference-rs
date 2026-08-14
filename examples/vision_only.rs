@@ -1,6 +1,6 @@
 use color_eyre::Result;
 use open_clip_inference::VisionEmbedder;
-use ort::ep::{CUDA, CoreML, DirectML, TensorRT};
+use ort::ep::{CUDA};
 use std::path::PathBuf;
 use std::time::Instant;
 
@@ -10,10 +10,7 @@ async fn main() -> Result<()> {
     let model_id = "RuteNL/MobileCLIP2-S3-OpenCLIP-ONNX";
     let embedder = VisionEmbedder::from_hf(model_id)
         .with_execution_providers(&[
-            TensorRT::default().build(),
             CUDA::default().build(),
-            DirectML::default().build(),
-            CoreML::default().build(),
         ])
         .build()
         .await?;

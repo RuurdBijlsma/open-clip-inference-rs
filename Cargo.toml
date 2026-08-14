@@ -63,3 +63,20 @@ tracing-subscriber = { version = "0.3.23", features = ["env-filter", "fmt"] }
 [[bench]]
 name = "model_bench"
 harness = false
+required-features = ["cuda"]
+
+[[example]]
+name = "search"
+required-features = ["cuda"]
+
+[[example]]
+name = "debug_local"
+required-features = ["cuda"]
+
+[[example]]
+name = "vision_only"
+required-features = ["cuda"]
+
+[[example]]
+name = "text_only"
+required-features = ["cuda"]
