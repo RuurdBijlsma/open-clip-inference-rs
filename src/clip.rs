@@ -6,6 +6,7 @@ use crate::text::TextEmbedder;
 use crate::vision::VisionEmbedder;
 use bon::bon;
 use image::DynamicImage;
+use ort::environment::Environment;
 use ort::ep::ExecutionProviderDispatch;
 use ort::session::builder::GraphOptimizationLevel;
 use std::path::{Path, PathBuf};
@@ -27,6 +28,7 @@ impl Clip {
         #[builder(start_fn)] model_id: &str,
         cache_dir: Option<&Path>,
         with_execution_providers: Option<&[ExecutionProviderDispatch]>,
+        with_environment: Option<&Environment>,
         with_intra_threads: Option<usize>,
         with_inter_threads: Option<usize>,
         with_memory_pattern: Option<bool>,
@@ -35,6 +37,7 @@ impl Clip {
         let model_dir = model_manager::get_hf_model(model_id, cache_dir).await?;
         Self::from_local_dir(&model_dir)
             .maybe_with_execution_providers(with_execution_providers)
+            .maybe_with_environment(with_environment)
             .maybe_with_intra_threads(with_intra_threads)
             .maybe_with_inter_threads(with_inter_threads)
             .maybe_with_memory_pattern(with_memory_pattern)
@@ -48,6 +51,7 @@ impl Clip {
         #[builder(start_fn)] model_id: &str,
         base_folder: Option<&Path>,
         with_execution_providers: Option<&[ExecutionProviderDispatch]>,
+        with_environment: Option<&Environment>,
         with_intra_threads: Option<usize>,
         with_inter_threads: Option<usize>,
         with_memory_pattern: Option<bool>,
@@ -56,6 +60,7 @@ impl Clip {
         let base_folder = base_folder.map_or_else(get_default_base_folder, ToOwned::to_owned);
         Self::from_local_dir(&base_folder.join(model_id))
             .maybe_with_execution_providers(with_execution_providers)
+            .maybe_with_environment(with_environment)
             .maybe_with_intra_threads(with_intra_threads)
             .maybe_with_inter_threads(with_inter_threads)
             .maybe_with_memory_pattern(with_memory_pattern)
@@ -68,6 +73,7 @@ impl Clip {
     pub fn from_local_dir(
         #[builder(start_fn)] model_dir: &Path,
         with_execution_providers: Option<&[ExecutionProviderDispatch]>,
+        with_environment: Option<&Environment>,
         with_intra_threads: Option<usize>,
         with_inter_threads: Option<usize>,
         with_memory_pattern: Option<bool>,
@@ -76,6 +82,7 @@ impl Clip {
         model_manager::verify_model_dir(model_dir)?;
         let vision = VisionEmbedder::from_local_dir(model_dir)
             .maybe_with_execution_providers(with_execution_providers)
+            .maybe_with_environment(with_environment)
             .maybe_with_intra_threads(with_intra_threads)
             .maybe_with_inter_threads(with_inter_threads)
             .maybe_with_memory_pattern(with_memory_pattern)
@@ -83,6 +90,7 @@ impl Clip {
             .build()?;
         let text = TextEmbedder::from_local_dir(model_dir)
             .maybe_with_execution_providers(with_execution_providers)
+            .maybe_with_environment(with_environment)
             .maybe_with_intra_threads(with_intra_threads)
             .maybe_with_inter_threads(with_inter_threads)
             .maybe_with_memory_pattern(with_memory_pattern)
@@ -99,6 +107,7 @@ impl Clip {
     pub fn duplicate(&self) -> Result<Self, ClipError> {
         Self::from_local_dir(&self.model_dir)
             .with_execution_providers(&self.vision.session.execution_providers)
+            .with_environment(&self.vision.session.environment)
             .maybe_with_intra_threads(self.vision.session.intra_threads)
             .maybe_with_inter_threads(self.vision.session.inter_threads)
             .maybe_with_memory_pattern(self.vision.session.memory_pattern)

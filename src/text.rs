@@ -5,6 +5,7 @@ use crate::model_manager::get_default_base_folder;
 use crate::onnx::OnnxSession;
 use bon::bon;
 use ndarray::Array2;
+use ort::environment::Environment;
 use ort::ep::ExecutionProviderDispatch;
 use ort::session::builder::GraphOptimizationLevel;
 use ort::value::Value;
@@ -31,6 +32,7 @@ impl TextEmbedder {
         #[builder(start_fn)] model_id: &str,
         cache_dir: Option<&Path>,
         with_execution_providers: Option<&[ExecutionProviderDispatch]>,
+        with_environment: Option<&Environment>,
         with_intra_threads: Option<usize>,
         with_inter_threads: Option<usize>,
         with_memory_pattern: Option<bool>,
@@ -39,6 +41,7 @@ impl TextEmbedder {
         let model_dir = model_manager::get_hf_model(model_id, cache_dir).await?;
         Self::from_local_dir(&model_dir)
             .maybe_with_execution_providers(with_execution_providers)
+            .maybe_with_environment(with_environment)
             .maybe_with_intra_threads(with_intra_threads)
             .maybe_with_inter_threads(with_inter_threads)
             .maybe_with_memory_pattern(with_memory_pattern)
@@ -52,6 +55,7 @@ impl TextEmbedder {
         #[builder(start_fn)] model_id: &str,
         base_folder: Option<&Path>,
         with_execution_providers: Option<&[ExecutionProviderDispatch]>,
+        with_environment: Option<&Environment>,
         with_intra_threads: Option<usize>,
         with_inter_threads: Option<usize>,
         with_memory_pattern: Option<bool>,
@@ -60,6 +64,7 @@ impl TextEmbedder {
         let base_folder = base_folder.map_or_else(get_default_base_folder, ToOwned::to_owned);
         Self::from_local_dir(&base_folder.join(model_id))
             .maybe_with_execution_providers(with_execution_providers)
+            .maybe_with_environment(with_environment)
             .maybe_with_intra_threads(with_intra_threads)
             .maybe_with_inter_threads(with_inter_threads)
             .maybe_with_memory_pattern(with_memory_pattern)
@@ -72,6 +77,7 @@ impl TextEmbedder {
     pub fn from_local_dir(
         #[builder(start_fn)] model_dir: &Path,
         with_execution_providers: Option<&[ExecutionProviderDispatch]>,
+        with_environment: Option<&Environment>,
         with_intra_threads: Option<usize>,
         with_inter_threads: Option<usize>,
         with_memory_pattern: Option<bool>,
@@ -92,6 +98,7 @@ impl TextEmbedder {
             with_intra_threads,
             with_inter_threads,
             with_memory_pattern,
+            with_environment,
         )?;
         let config = OpenClipConfig::from_file(config_path)?;
         let mut tokenizer = Tokenizer::from_file(tokenizer_path)?;
@@ -133,6 +140,7 @@ impl TextEmbedder {
     pub fn duplicate(&self) -> Result<Self, ClipError> {
         Self::from_local_dir(&self.model_dir)
             .with_execution_providers(&self.session.execution_providers)
+            .with_environment(&self.session.environment)
             .maybe_with_intra_threads(self.session.intra_threads)
             .maybe_with_inter_threads(self.session.inter_threads)
             .maybe_with_memory_pattern(self.session.memory_pattern)

@@ -72,6 +72,10 @@
 //!
 //! ## Execution Providers (Nvidia, AMD, Intel, Mac, Arm, etc.)
 //!
+//! ONNX Runtime uses one environment per process. If your application initializes ORT itself or
+//! shares ORT with another crate, pass that environment to the builder with
+//! `.with_environment(&environment)`. Otherwise, this crate creates and reuses a default one.
+//!
 //! Since this is implemented with `ort`, many execution providers are available to enable hardware acceleration. You can
 //! enable an execution provider in this crate with cargo features. A full list of execution providers is
 //! available [here](https://ort.pyke.io/perf/execution-providers).
