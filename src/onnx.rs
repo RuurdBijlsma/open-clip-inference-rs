@@ -1,17 +1,32 @@
 use crate::ClipError;
+use ort::environment::Environment;
 use ort::ep::ExecutionProviderDispatch;
 use ort::session::{Session, builder::GraphOptimizationLevel};
 use std::path::Path;
-use std::sync::RwLock;
+use std::sync::{Mutex, PoisonError, RwLock};
 
-#[derive(Debug)]
 pub struct OnnxSession {
     pub session: RwLock<Session>,
     pub execution_providers: Vec<ExecutionProviderDispatch>,
+    pub environment: Environment,
     pub optimization_level: Option<GraphOptimizationLevel>,
     pub intra_threads: Option<usize>,
     pub inter_threads: Option<usize>,
     pub memory_pattern: Option<bool>,
+}
+
+impl std::fmt::Debug for OnnxSession {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter
+            .debug_struct("OnnxSession")
+            .field("session", &self.session)
+            .field("execution_provider_count", &self.execution_providers.len())
+            .field("optimization_level", &self.optimization_level)
+            .field("intra_threads", &self.intra_threads)
+            .field("inter_threads", &self.inter_threads)
+            .field("memory_pattern", &self.memory_pattern)
+            .finish()
+    }
 }
 
 impl OnnxSession {
@@ -22,9 +37,16 @@ impl OnnxSession {
         intra_threads: Option<usize>,
         inter_threads: Option<usize>,
         memory_pattern: Option<bool>,
+        environment: Option<&Environment>,
     ) -> Result<Self, ClipError> {
-        let mut session_builder =
-            Session::builder()?.with_execution_providers(execution_providers)?;
+        let environment = match environment {
+            Some(environment) => environment.clone(),
+            None => default_environment()?,
+        };
+        let mut session_builder = Session::builder(&environment)?;
+        if !execution_providers.is_empty() {
+            session_builder = session_builder.with_execution_providers(execution_providers)?;
+        }
         if let Some(optimization_level) = optimization_level {
             session_builder = session_builder.with_optimization_level(optimization_level)?;
         }
@@ -42,6 +64,7 @@ impl OnnxSession {
         Ok(Self {
             session: RwLock::new(session),
             execution_providers: execution_providers.to_vec(),
+            environment,
             intra_threads,
             inter_threads,
             memory_pattern,
@@ -65,4 +88,19 @@ impl OnnxSession {
         }
         Ok(None)
     }
+}
+
+/// Reuse the process-wide default environment for sessions created without a caller-supplied one.
+fn default_environment() -> Result<Environment, ClipError> {
+    static ENVIRONMENT: Mutex<Option<Environment>> = Mutex::new(None);
+    let mut slot = ENVIRONMENT.lock().unwrap_or_else(PoisonError::into_inner);
+    let environment = if let Some(environment) = slot.as_ref() {
+        environment.clone()
+    } else {
+        let environment = ort::init().with_name("open_clip_inference").build()?;
+        *slot = Some(environment.clone());
+        environment
+    };
+    drop(slot);
+    Ok(environment)
 }
