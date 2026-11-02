@@ -25,6 +25,7 @@ impl std::fmt::Debug for OnnxSession {
             .field("intra_threads", &self.intra_threads)
             .field("inter_threads", &self.inter_threads)
             .field("memory_pattern", &self.memory_pattern)
+            .field("environment", &self.environment)
             .finish()
     }
 }
